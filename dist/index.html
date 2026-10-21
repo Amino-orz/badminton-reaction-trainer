@@ -99,6 +99,7 @@
     .arrow-wrap.perspective { width: clamp(220px, 62vw, 390px); height: clamp(220px, 62vw, 390px); }
     .arrow-wrap.perspective .arrow-depth { display: block; }
     .arrow-wrap.perspective .arrow-shape { fill: url(#arrowGradient); filter: drop-shadow(0 0 34px color-mix(in srgb, currentColor 52%, transparent)); }
+    .arrow-wrap.perspective.reverse-depth .arrow-shape { fill: url(#arrowGradientTail); }
     .arrow-wrap.fresh { color: var(--fresh); }
     .arrow-wrap.repeat { color: var(--repeat); }
     .arrow-wrap.repeat::after {
@@ -257,6 +258,11 @@
               <stop offset=".48" stop-color="currentColor" stop-opacity=".82" />
               <stop offset="1" stop-color="currentColor" />
             </linearGradient>
+            <linearGradient id="arrowGradientTail" x1="0" y1=".5" x2="1" y2=".5">
+              <stop offset="0" stop-color="currentColor" stop-opacity=".62" />
+              <stop offset=".5" stop-color="currentColor" stop-opacity=".88" />
+              <stop offset="1" stop-color="currentColor" />
+            </linearGradient>
           </defs>
           <path class="arrow-depth" id="arrowDepth" d="M18 120 105 33v53h117v68H105v53L18 120Z" />
           <path class="arrow-shape" id="arrowShape" d="M18 120 105 33v53h117v68H105v53L18 120Z" />
@@ -327,6 +333,7 @@
 
     const classicArrow = 'M18 120 105 33v53h117v68H105v53L18 120Z';
     const perspectiveArrow = 'M14 120 104 38v42l118 17v46l-118 17v42L14 120Z';
+    const leftPerspectiveArrow = 'M28 120 94 72v20l128-30v116L94 148v20L28 120Z';
     const directionNames = {
       left: '左方', right: '右方',
       'up-left': '左上方', 'up-right': '右上方',
@@ -374,7 +381,11 @@
       if (!running) return;
       const direction = nextDirection();
       const repeated = direction === lastDirection;
-      arrow.className = `arrow-wrap ${direction} ${selectedMode === 'multi' ? 'perspective' : ''} ${repeated ? 'repeat' : 'fresh'}`;
+      const reverseDepth = selectedMode === 'multi' && (direction === 'up-left' || direction === 'down-left');
+      const shape = reverseDepth ? leftPerspectiveArrow : (selectedMode === 'multi' ? perspectiveArrow : classicArrow);
+      arrowShape.setAttribute('d', shape);
+      arrowDepth.setAttribute('d', shape);
+      arrow.className = `arrow-wrap ${direction} ${selectedMode === 'multi' ? 'perspective' : ''} ${reverseDepth ? 'reverse-depth' : ''} ${repeated ? 'repeat' : 'fresh'}`;
       arrow.setAttribute('aria-label', `向${directionNames[direction]}${repeated ? '，连续同向' : ''}`);
       requestAnimationFrame(() => {
         arrow.classList.add('show');
