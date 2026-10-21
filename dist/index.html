@@ -54,7 +54,7 @@
       mask-image: radial-gradient(circle at center, black, transparent 74%);
     }
 
-    .topbar { display: flex; justify-content: space-between; align-items: center; min-height: 44px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; min-height: 44px; position: relative; z-index: 12; }
     .brand { display: flex; align-items: center; gap: 10px; }
     .brand-mark {
       width: 26px; height: 26px; border-radius: 50%;
@@ -67,6 +67,11 @@
       border: 1px solid var(--line); border-radius: 999px; padding: 7px 10px;
     }
     .session-state.active { color: var(--fresh); border-color: rgba(203,255,56,.35); }
+    .top-actions { display: flex; align-items: center; gap: 7px; }
+    .mode-pill {
+      border: 1px solid var(--line); background: rgba(255,255,255,.04); color: var(--ink);
+      border-radius: 999px; padding: 7px 9px; font-size: 10px; font-weight: 760; letter-spacing: .08em;
+    }
 
     .stage { position: relative; min-height: 0; display: grid; place-items: center; }
     .court-line { position: absolute; left: 50%; top: 16%; bottom: 12%; width: 1px; background: linear-gradient(transparent, rgba(255,255,255,.13) 18%, rgba(255,255,255,.13) 82%, transparent); }
@@ -75,15 +80,25 @@
       width: clamp(190px, 52vw, 340px);
       height: clamp(190px, 52vw, 340px);
       display: grid; place-items: center;
-      opacity: 0; transform: scale(.72); filter: blur(7px);
+      --rot: 0deg;
+      opacity: 0; transform: rotate(var(--rot)) scale(.72); filter: blur(7px);
       transition: opacity 90ms linear, transform 180ms cubic-bezier(.2,.9,.2,1.2), filter 120ms linear;
       pointer-events: none;
     }
-    .arrow-wrap.show { opacity: 1; transform: scale(1); filter: none; }
+    .arrow-wrap.show { opacity: 1; transform: rotate(var(--rot)) scale(1); filter: none; }
     .arrow-wrap.left { left: max(2%, calc(50% - 360px)); }
     .arrow-wrap.right { right: max(2%, calc(50% - 360px)); }
+    .arrow-wrap.right { --rot: 180deg; }
+    .arrow-wrap.up-left { --rot: 45deg; left: -3%; top: 5%; }
+    .arrow-wrap.up-right { --rot: 135deg; right: -3%; top: 5%; }
+    .arrow-wrap.down-right { --rot: 225deg; right: -3%; bottom: 3%; }
+    .arrow-wrap.down-left { --rot: -45deg; left: -3%; bottom: 3%; }
     .arrow-svg { width: 100%; height: 100%; overflow: visible; }
     .arrow-shape { fill: currentColor; filter: drop-shadow(0 0 28px color-mix(in srgb, currentColor 45%, transparent)); }
+    .arrow-depth { display: none; fill: rgba(0,0,0,.5); transform: translate(12px, -10px); }
+    .arrow-wrap.perspective { width: clamp(220px, 62vw, 390px); height: clamp(220px, 62vw, 390px); }
+    .arrow-wrap.perspective .arrow-depth { display: block; }
+    .arrow-wrap.perspective .arrow-shape { fill: url(#arrowGradient); filter: drop-shadow(0 0 34px color-mix(in srgb, currentColor 52%, transparent)); }
     .arrow-wrap.fresh { color: var(--fresh); }
     .arrow-wrap.repeat { color: var(--repeat); }
     .arrow-wrap.repeat::after {
@@ -96,6 +111,35 @@
     .eyebrow { margin: 0 0 8px; font-size: 11px; color: var(--fresh); font-weight: 780; letter-spacing: .2em; }
     h1 { margin: 0; font-size: clamp(36px, 10vw, 62px); line-height: .96; letter-spacing: -.055em; }
     .hint { margin: 15px auto 0; max-width: 280px; font-size: 13px; line-height: 1.6; color: var(--muted); }
+
+    .mode-picker {
+      position: absolute; inset: 0; z-index: 10; padding: max(72px, calc(env(safe-area-inset-top) + 64px)) 18px max(20px, env(safe-area-inset-bottom));
+      display: grid; align-content: center; background: rgba(7,10,13,.97); backdrop-filter: blur(18px);
+      opacity: 0; visibility: hidden; transition: .2s ease;
+    }
+    .mode-picker.open { opacity: 1; visibility: visible; }
+    .mode-inner { width: min(100%, 560px); margin: 0 auto; }
+    .mode-kicker { margin: 0 0 7px; color: var(--fresh); font-size: 11px; font-weight: 800; letter-spacing: .2em; }
+    .mode-title { margin: 0; font-size: clamp(34px, 9vw, 50px); letter-spacing: -.05em; line-height: 1; }
+    .mode-sub { margin: 12px 0 22px; color: var(--muted); font-size: 13px; }
+    .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .mode-card {
+      min-height: 190px; padding: 16px; text-align: left; border: 1px solid var(--line); border-radius: 22px;
+      color: var(--ink); background: linear-gradient(145deg, rgba(255,255,255,.075), rgba(255,255,255,.025));
+      display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; position: relative;
+    }
+    .mode-card::after { content: ""; position: absolute; width: 120px; height: 120px; border-radius: 50%; background: var(--fresh); filter: blur(70px); opacity: .1; right: -40px; top: -45px; }
+    .mode-card:active { transform: scale(.98); border-color: rgba(203,255,56,.5); }
+    .mode-icon { height: 82px; position: relative; color: var(--fresh); }
+    .simple-icon::before, .simple-icon::after { content: ""; position: absolute; top: 31px; width: 48px; height: 20px; background: currentColor; }
+    .simple-icon::before { left: 4px; clip-path: polygon(0 50%, 42% 0, 42% 28%, 100% 28%, 100% 72%, 42% 72%, 42% 100%); }
+    .simple-icon::after { right: 4px; transform: scaleX(-1); clip-path: polygon(0 50%, 42% 0, 42% 28%, 100% 28%, 100% 72%, 42% 72%, 42% 100%); }
+    .multi-icon { background: radial-gradient(circle, rgba(203,255,56,.18) 0 7px, transparent 8px); }
+    .multi-icon span { position: absolute; left: 50%; top: 50%; width: 44px; height: 6px; transform-origin: 0 50%; transform: rotate(var(--a)); background: linear-gradient(90deg, rgba(203,255,56,.22), var(--fresh)); border-radius: 99px; }
+    .multi-icon span::after { content: ""; position: absolute; right: -2px; top: -5px; border-left: 12px solid var(--fresh); border-top: 8px solid transparent; border-bottom: 8px solid transparent; }
+    .mode-card small { color: var(--muted); font-size: 10px; letter-spacing: .12em; }
+    .mode-card strong { display: block; margin-top: 5px; font-size: 19px; }
+    .mode-card p { margin: 5px 0 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
 
     .controls { width: min(100%, 540px); margin: 0 auto; position: relative; }
     .timer-row { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 12px; }
@@ -147,6 +191,19 @@
       .timer { font-size: 26px; }
       .timer-row { margin-bottom: 7px; }
       .btn { min-height: 40px; }
+      .mode-picker { padding-top: 48px; }
+      .mode-inner { width: min(82%, 620px); }
+      .mode-title { font-size: 30px; }
+      .mode-sub { margin: 7px 0 10px; }
+      .mode-card { min-height: 120px; display: grid; grid-template-columns: 100px 1fr; align-items: center; }
+      .mode-icon { height: 76px; }
+    }
+
+    @media (max-width: 360px) {
+      .mode-card { min-height: 168px; padding: 13px; }
+      .mode-card strong { font-size: 17px; }
+      .mode-card p { font-size: 10px; }
+      .mode-icon { height: 68px; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -158,19 +215,51 @@
   <main class="app" id="app">
     <header class="topbar">
       <div class="brand"><span class="brand-mark"></span><span class="brand-name">启动反应</span></div>
-      <span class="session-state" id="state">准备</span>
+      <div class="top-actions">
+        <button class="mode-pill" id="modeBtn">选择模式</button>
+        <span class="session-state" id="state">准备</span>
+      </div>
     </header>
+
+    <section class="mode-picker open" id="modePicker" aria-label="选择训练模式">
+      <div class="mode-inner">
+        <p class="mode-kicker">CHOOSE YOUR DRILL</p>
+        <h1 class="mode-title">今天练哪一种？</h1>
+        <p class="mode-sub">两种模式共用训练节奏、随机逻辑与计时功能。</p>
+        <div class="mode-grid">
+          <button class="mode-card" data-mode="simple">
+            <div class="mode-icon simple-icon" aria-hidden="true"></div>
+            <div><small>2-POINT / 基础</small><strong>左右启动</strong><p>完全保留原版，专注两侧第一步。</p></div>
+          </button>
+          <button class="mode-card" data-mode="multi">
+            <div class="mode-icon multi-icon" aria-hidden="true">
+              <span style="--a:-135deg"></span><span style="--a:-45deg"></span><span style="--a:0deg"></span>
+              <span style="--a:45deg"></span><span style="--a:135deg"></span><span style="--a:180deg"></span>
+            </div>
+            <div><small>6-POINT / 进阶</small><strong>全场多向</strong><p>六向随机，透视箭头强化前后场判断。</p></div>
+          </button>
+        </div>
+      </div>
+    </section>
 
     <section class="stage" aria-live="assertive" aria-atomic="true">
       <div class="court-line"></div>
       <div class="idle-copy" id="idleCopy">
         <p class="eyebrow">BADMINTON / SPLIT STEP</p>
-        <h1>看向 · 蹬地 · 回位</h1>
-        <p class="hint">保持重心在前脚掌。跟随箭头启动，再迅速回到中心。</p>
+        <h1 id="drillTitle">看向 · 蹬地 · 回位</h1>
+        <p class="hint" id="drillHint">保持重心在前脚掌。跟随箭头启动，再迅速回到中心。</p>
       </div>
       <div class="arrow-wrap" id="arrow" role="img" aria-label="">
         <svg class="arrow-svg" viewBox="0 0 240 240" aria-hidden="true">
-          <path class="arrow-shape" d="M18 120 105 33v53h117v68H105v53L18 120Z" />
+          <defs>
+            <linearGradient id="arrowGradient" x1="1" y1=".5" x2="0" y2=".5">
+              <stop offset="0" stop-color="currentColor" stop-opacity=".32" />
+              <stop offset=".48" stop-color="currentColor" stop-opacity=".82" />
+              <stop offset="1" stop-color="currentColor" />
+            </linearGradient>
+          </defs>
+          <path class="arrow-depth" id="arrowDepth" d="M18 120 105 33v53h117v68H105v53L18 120Z" />
+          <path class="arrow-shape" id="arrowShape" d="M18 120 105 33v53h117v68H105v53L18 120Z" />
         </svg>
       </div>
     </section>
@@ -216,6 +305,8 @@
     const $ = (id) => document.getElementById(id);
     const app = $('app');
     const arrow = $('arrow');
+    const arrowShape = $('arrowShape');
+    const arrowDepth = $('arrowDepth');
     const idleCopy = $('idleCopy');
     const state = $('state');
     const timerEl = $('timer');
@@ -229,7 +320,19 @@
     const randomTime = $('randomTime');
     const randomMode = $('randomMode');
     const randomField = $('randomField');
+    const modePicker = $('modePicker');
+    const modeBtn = $('modeBtn');
+    const drillTitle = $('drillTitle');
+    const drillHint = $('drillHint');
 
+    const classicArrow = 'M18 120 105 33v53h117v68H105v53L18 120Z';
+    const perspectiveArrow = 'M14 120 104 38v42l118 17v46l-118 17v42L14 120Z';
+    const directionNames = {
+      left: '左方', right: '右方',
+      'up-left': '左上方', 'up-right': '右上方',
+      'down-right': '右下方', 'down-left': '左下方'
+    };
+    let selectedMode = null;
     let running = false;
     let lastDirection = null;
     let count = 0;
@@ -247,7 +350,12 @@
       return Math.random();
     }
 
-    function nextDirection() { return secureRandom() < .5 ? 'left' : 'right'; }
+    function nextDirection() {
+      const directions = selectedMode === 'multi'
+        ? ['up-left', 'up-right', 'right', 'down-right', 'down-left', 'left']
+        : ['left', 'right'];
+      return directions[Math.floor(secureRandom() * directions.length)];
+    }
     function ms(input) { return Number(input.value) * 1000; }
     function formatTime(value) {
       const totalTenths = Math.floor(value / 100);
@@ -266,12 +374,10 @@
       if (!running) return;
       const direction = nextDirection();
       const repeated = direction === lastDirection;
-      arrow.className = `arrow-wrap ${direction} ${repeated ? 'repeat' : 'fresh'}`;
-      arrow.style.transform = direction === 'right' ? 'scaleX(-1) scale(.72)' : 'scale(.72)';
-      arrow.setAttribute('aria-label', `向${direction === 'left' ? '左' : '右'}${repeated ? '，连续同向' : ''}`);
+      arrow.className = `arrow-wrap ${direction} ${selectedMode === 'multi' ? 'perspective' : ''} ${repeated ? 'repeat' : 'fresh'}`;
+      arrow.setAttribute('aria-label', `向${directionNames[direction]}${repeated ? '，连续同向' : ''}`);
       requestAnimationFrame(() => {
         arrow.classList.add('show');
-        arrow.style.transform = direction === 'right' ? 'scaleX(-1) scale(1)' : 'scale(1)';
       });
       lastDirection = direction;
       count += 1;
@@ -285,9 +391,29 @@
 
     function hideArrow() {
       arrow.classList.remove('show');
-      arrow.style.transform = arrow.classList.contains('right') ? 'scaleX(-1) scale(.72)' : 'scale(.72)';
       const extra = randomMode.checked ? secureRandom() * ms(randomTime) : 0;
       phaseTimeout = setTimeout(showArrow, ms(gapTime) + extra);
+    }
+
+    function chooseMode(mode) {
+      if (running) stop();
+      selectedMode = mode;
+      const multi = mode === 'multi';
+      modeBtn.textContent = multi ? '六点模式' : '左右模式';
+      drillTitle.textContent = multi ? '读向 · 启动 · 回中' : '看向 · 蹬地 · 回位';
+      drillHint.textContent = multi
+        ? '跟随六向透视箭头完成全场启动，斜向箭头代表前后场移动。'
+        : '保持重心在前脚掌。跟随箭头启动，再迅速回到中心。';
+      arrowShape.setAttribute('d', multi ? perspectiveArrow : classicArrow);
+      arrowDepth.setAttribute('d', multi ? perspectiveArrow : classicArrow);
+      modePicker.classList.remove('open');
+      reset();
+    }
+
+    function openModePicker() {
+      if (running) stop();
+      settings.classList.remove('open');
+      modePicker.classList.add('open');
     }
 
     function start() {
@@ -322,6 +448,10 @@
 
     startBtn.addEventListener('click', () => running ? stop() : start());
     resetBtn.addEventListener('click', reset);
+    modeBtn.addEventListener('click', openModePicker);
+    document.querySelectorAll('[data-mode]').forEach((button) => {
+      button.addEventListener('click', () => chooseMode(button.dataset.mode));
+    });
     settingsBtn.addEventListener('click', () => {
       const open = settings.classList.toggle('open');
       settings.setAttribute('aria-hidden', String(!open)); settingsBtn.setAttribute('aria-expanded', String(open));
