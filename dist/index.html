@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#070a0d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="启动反应" />
+  <title>羽球启动反应</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f5f7f2;
+      --muted: #89918d;
+      --line: rgba(255,255,255,.11);
+      --fresh: #cbff38;
+      --repeat: #ff684c;
+      --panel: rgba(17, 22, 24, .93);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; margin: 0; overflow: hidden; }
+    body {
+      font-family: ui-rounded, "SF Pro Rounded", "SF Pro Display", -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 50% 42%, rgba(203,255,56,.06), transparent 38%),
+        #070a0d;
+      overscroll-behavior: none;
+      touch-action: manipulation;
+    }
+
+    button, input { font: inherit; }
+    button { color: inherit; }
+
+    .app {
+      min-height: 100dvh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      padding: max(14px, env(safe-area-inset-top)) 18px max(12px, env(safe-area-inset-bottom));
+      position: relative;
+      isolation: isolate;
+    }
+
+    .app::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      opacity: .14;
+      background-image: linear-gradient(rgba(255,255,255,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.12) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(circle at center, black, transparent 74%);
+    }
+
+    .topbar { display: flex; justify-content: space-between; align-items: center; min-height: 44px; }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-mark {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--fresh); position: relative; box-shadow: 0 0 24px rgba(203,255,56,.32);
+    }
+    .brand-mark::after { content: ""; position: absolute; width: 9px; height: 9px; background: #070a0d; border-radius: 50%; left: 8px; top: 8px; }
+    .brand-name { font-size: 13px; font-weight: 760; letter-spacing: .16em; }
+    .session-state {
+      font-size: 11px; font-weight: 700; letter-spacing: .12em; color: var(--muted);
+      border: 1px solid var(--line); border-radius: 999px; padding: 7px 10px;
+    }
+    .session-state.active { color: var(--fresh); border-color: rgba(203,255,56,.35); }
+
+    .stage { position: relative; min-height: 0; display: grid; place-items: center; }
+    .court-line { position: absolute; left: 50%; top: 16%; bottom: 12%; width: 1px; background: linear-gradient(transparent, rgba(255,255,255,.13) 18%, rgba(255,255,255,.13) 82%, transparent); }
+    .arrow-wrap {
+      position: absolute;
+      width: clamp(190px, 52vw, 340px);
+      height: clamp(190px, 52vw, 340px);
+      display: grid; place-items: center;
+      opacity: 0; transform: scale(.72); filter: blur(7px);
+      transition: opacity 90ms linear, transform 180ms cubic-bezier(.2,.9,.2,1.2), filter 120ms linear;
+      pointer-events: none;
+    }
+    .arrow-wrap.show { opacity: 1; transform: scale(1); filter: none; }
+    .arrow-wrap.left { left: max(2%, calc(50% - 360px)); }
+    .arrow-wrap.right { right: max(2%, calc(50% - 360px)); }
+    .arrow-svg { width: 100%; height: 100%; overflow: visible; }
+    .arrow-shape { fill: currentColor; filter: drop-shadow(0 0 28px color-mix(in srgb, currentColor 45%, transparent)); }
+    .arrow-wrap.fresh { color: var(--fresh); }
+    .arrow-wrap.repeat { color: var(--repeat); }
+    .arrow-wrap.repeat::after {
+      content: "连续"; position: absolute; bottom: -12px; font-size: 11px; font-weight: 850; letter-spacing: .24em;
+      color: var(--repeat); border: 1px solid currentColor; border-radius: 999px; padding: 5px 8px 5px 10px;
+    }
+
+    .idle-copy { text-align: center; transition: opacity .2s; }
+    .idle-copy.hidden { opacity: 0; }
+    .eyebrow { margin: 0 0 8px; font-size: 11px; color: var(--fresh); font-weight: 780; letter-spacing: .2em; }
+    h1 { margin: 0; font-size: clamp(36px, 10vw, 62px); line-height: .96; letter-spacing: -.055em; }
+    .hint { margin: 15px auto 0; max-width: 280px; font-size: 13px; line-height: 1.6; color: var(--muted); }
+
+    .controls { width: min(100%, 540px); margin: 0 auto; position: relative; }
+    .timer-row { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 12px; }
+    .timer-label { font-size: 10px; letter-spacing: .18em; color: var(--muted); font-weight: 700; }
+    .timer { font-variant-numeric: tabular-nums; font-size: 36px; line-height: 1; font-weight: 350; letter-spacing: -.03em; }
+    .rep-count { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+    .button-row { display: grid; grid-template-columns: 42px 1fr 42px; gap: 9px; }
+    .btn {
+      border: 1px solid var(--line); background: rgba(255,255,255,.05); min-height: 46px; border-radius: 14px;
+      display: grid; place-items: center; font-weight: 780; cursor: pointer;
+    }
+    .btn:active { transform: scale(.98); }
+    .btn-primary { border: 0; background: var(--fresh); color: #0b0e0b; font-size: 15px; box-shadow: 0 8px 30px rgba(203,255,56,.15); }
+    .btn-primary.stop { background: var(--repeat); color: white; box-shadow: 0 8px 30px rgba(255,104,76,.16); }
+    .icon { width: 19px; height: 19px; }
+
+    .settings {
+      position: absolute; left: 0; right: 0; bottom: calc(100% + 10px); padding: 16px;
+      border: 1px solid var(--line); border-radius: 20px; background: var(--panel); backdrop-filter: blur(24px);
+      box-shadow: 0 -16px 60px rgba(0,0,0,.35); opacity: 0; visibility: hidden; transform: translateY(8px);
+      transition: .18s ease; z-index: 5;
+    }
+    .settings.open { opacity: 1; visibility: visible; transform: none; }
+    .settings-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .settings-title { margin: 0; font-size: 13px; }
+    .settings-note { font-size: 10px; color: var(--muted); }
+    .field { display: grid; grid-template-columns: 1fr auto; gap: 8px 14px; align-items: center; margin-top: 14px; }
+    .field label { font-size: 12px; font-weight: 680; }
+    .field output { font-size: 12px; color: var(--fresh); font-variant-numeric: tabular-nums; }
+    input[type="range"] { grid-column: 1 / -1; width: 100%; accent-color: var(--fresh); }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .toggle-copy strong { display: block; font-size: 12px; }
+    .toggle-copy span { display: block; margin-top: 3px; font-size: 10px; color: var(--muted); }
+    .switch { appearance: none; width: 42px; height: 25px; border-radius: 999px; background: #353c3b; position: relative; transition: .2s; }
+    .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 19px; height: 19px; border-radius: 50%; background: white; transition: .2s; }
+    .switch:checked { background: var(--fresh); }
+    .switch:checked::after { transform: translateX(17px); background: #111; }
+
+    .flash { animation: flash .18s ease-out; }
+    @keyframes flash { 50% { background-color: rgba(203,255,56,.045); } }
+
+    @media (orientation: landscape) and (max-height: 560px) {
+      .app { grid-template-rows: 40px 1fr auto; }
+      .arrow-wrap { width: min(42vh, 260px); height: min(42vh, 260px); }
+      .arrow-wrap.left { left: 16%; } .arrow-wrap.right { right: 16%; }
+      .idle-copy h1 { font-size: 36px; }
+      .hint { display: none; }
+      .timer { font-size: 26px; }
+      .timer-row { margin-bottom: 7px; }
+      .btn { min-height: 40px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .arrow-wrap, .settings { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" id="app">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark"></span><span class="brand-name">启动反应</span></div>
+      <span class="session-state" id="state">准备</span>
+    </header>
+
+    <section class="stage" aria-live="assertive" aria-atomic="true">
+      <div class="court-line"></div>
+      <div class="idle-copy" id="idleCopy">
+        <p class="eyebrow">BADMINTON / SPLIT STEP</p>
+        <h1>看向 · 蹬地 · 回位</h1>
+        <p class="hint">保持重心在前脚掌。跟随箭头启动，再迅速回到中心。</p>
+      </div>
+      <div class="arrow-wrap" id="arrow" role="img" aria-label="">
+        <svg class="arrow-svg" viewBox="0 0 240 240" aria-hidden="true">
+          <path class="arrow-shape" d="M18 120 105 33v53h117v68H105v53L18 120Z" />
+        </svg>
+      </div>
+    </section>
+
+    <section class="controls">
+      <div class="settings" id="settings" aria-hidden="true">
+        <div class="settings-head"><h2 class="settings-title">训练节奏</h2><span class="settings-note">训练中也可调整</span></div>
+        <div class="field">
+          <label for="showTime">箭头显示</label><output id="showOutput">1.0 秒</output>
+          <input id="showTime" type="range" min="0.3" max="3" step="0.1" value="1" />
+        </div>
+        <div class="field">
+          <label for="gapTime">空屏间隔</label><output id="gapOutput">1.5 秒</output>
+          <input id="gapTime" type="range" min="0.3" max="5" step="0.1" value="1.5" />
+        </div>
+        <div class="field" id="randomField" hidden>
+          <label for="randomTime">额外随机等待</label><output id="randomOutput">1.0 秒内</output>
+          <input id="randomTime" type="range" min="0.2" max="3" step="0.1" value="1" />
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-copy"><strong>随机节奏</strong><span>在空屏间隔后，再随机等待一小段时间</span></div>
+          <input class="switch" id="randomMode" type="checkbox" aria-label="随机节奏" />
+        </div>
+      </div>
+
+      <div class="timer-row">
+        <div><div class="timer-label">训练用时</div><div class="timer" id="timer">00:00.0</div></div>
+        <div class="rep-count"><span id="repCount">0</span> 次启动</div>
+      </div>
+      <div class="button-row">
+        <button class="btn" id="settingsBtn" aria-label="打开训练设置" aria-expanded="false">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M6 14v6"/></svg>
+        </button>
+        <button class="btn btn-primary" id="startBtn">开始训练</button>
+        <button class="btn" id="resetBtn" aria-label="计时归零">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4.8 9A8 8 0 1 1 4 14"/><path d="M4 4v5h5"/></svg>
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const app = $('app');
+    const arrow = $('arrow');
+    const idleCopy = $('idleCopy');
+    const state = $('state');
+    const timerEl = $('timer');
+    const repCount = $('repCount');
+    const startBtn = $('startBtn');
+    const resetBtn = $('resetBtn');
+    const settingsBtn = $('settingsBtn');
+    const settings = $('settings');
+    const showTime = $('showTime');
+    const gapTime = $('gapTime');
+    const randomTime = $('randomTime');
+    const randomMode = $('randomMode');
+    const randomField = $('randomField');
+
+    let running = false;
+    let lastDirection = null;
+    let count = 0;
+    let startedAt = 0;
+    let elapsedBeforeStart = 0;
+    let phaseTimeout = null;
+    let timerFrame = null;
+
+    function secureRandom() {
+      if (crypto?.getRandomValues) {
+        const buffer = new Uint32Array(1);
+        crypto.getRandomValues(buffer);
+        return buffer[0] / 4294967296;
+      }
+      return Math.random();
+    }
+
+    function nextDirection() { return secureRandom() < .5 ? 'left' : 'right'; }
+    function ms(input) { return Number(input.value) * 1000; }
+    function formatTime(value) {
+      const totalTenths = Math.floor(value / 100);
+      const minutes = String(Math.floor(totalTenths / 600)).padStart(2, '0');
+      const seconds = String(Math.floor((totalTenths % 600) / 10)).padStart(2, '0');
+      return `${minutes}:${seconds}.${totalTenths % 10}`;
+    }
+
+    function updateTimer() {
+      if (!running) return;
+      timerEl.textContent = formatTime(elapsedBeforeStart + performance.now() - startedAt);
+      timerFrame = requestAnimationFrame(updateTimer);
+    }
+
+    function showArrow() {
+      if (!running) return;
+      const direction = nextDirection();
+      const repeated = direction === lastDirection;
+      arrow.className = `arrow-wrap ${direction} ${repeated ? 'repeat' : 'fresh'}`;
+      arrow.style.transform = direction === 'right' ? 'scaleX(-1) scale(.72)' : 'scale(.72)';
+      arrow.setAttribute('aria-label', `向${direction === 'left' ? '左' : '右'}${repeated ? '，连续同向' : ''}`);
+      requestAnimationFrame(() => {
+        arrow.classList.add('show');
+        arrow.style.transform = direction === 'right' ? 'scaleX(-1) scale(1)' : 'scale(1)';
+      });
+      lastDirection = direction;
+      count += 1;
+      repCount.textContent = count;
+      app.classList.remove('flash');
+      void app.offsetWidth;
+      app.classList.add('flash');
+      if (navigator.vibrate) navigator.vibrate(18);
+      phaseTimeout = setTimeout(hideArrow, ms(showTime));
+    }
+
+    function hideArrow() {
+      arrow.classList.remove('show');
+      arrow.style.transform = arrow.classList.contains('right') ? 'scaleX(-1) scale(.72)' : 'scale(.72)';
+      const extra = randomMode.checked ? secureRandom() * ms(randomTime) : 0;
+      phaseTimeout = setTimeout(showArrow, ms(gapTime) + extra);
+    }
+
+    function start() {
+      running = true;
+      startedAt = performance.now();
+      lastDirection = null;
+      state.textContent = '训练中'; state.classList.add('active');
+      startBtn.textContent = '结束训练'; startBtn.classList.add('stop');
+      idleCopy.classList.add('hidden');
+      settings.classList.remove('open'); settings.setAttribute('aria-hidden', 'true'); settingsBtn.setAttribute('aria-expanded', 'false');
+      timerFrame = requestAnimationFrame(updateTimer);
+      phaseTimeout = setTimeout(showArrow, 450);
+    }
+
+    function stop() {
+      running = false;
+      elapsedBeforeStart += performance.now() - startedAt;
+      clearTimeout(phaseTimeout); cancelAnimationFrame(timerFrame);
+      arrow.classList.remove('show');
+      timerEl.textContent = formatTime(elapsedBeforeStart);
+      state.textContent = '已结束'; state.classList.remove('active');
+      startBtn.textContent = '再次开始'; startBtn.classList.remove('stop');
+      idleCopy.classList.remove('hidden');
+    }
+
+    function reset() {
+      if (running) stop();
+      elapsedBeforeStart = 0; count = 0; lastDirection = null;
+      timerEl.textContent = '00:00.0'; repCount.textContent = '0';
+      state.textContent = '准备'; startBtn.textContent = '开始训练';
+    }
+
+    startBtn.addEventListener('click', () => running ? stop() : start());
+    resetBtn.addEventListener('click', reset);
+    settingsBtn.addEventListener('click', () => {
+      const open = settings.classList.toggle('open');
+      settings.setAttribute('aria-hidden', String(!open)); settingsBtn.setAttribute('aria-expanded', String(open));
+    });
+    document.addEventListener('pointerdown', (event) => {
+      if (!settings.contains(event.target) && !settingsBtn.contains(event.target)) {
+        settings.classList.remove('open'); settings.setAttribute('aria-hidden', 'true'); settingsBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    function bindRange(input, output, suffix = ' 秒') {
+      const update = () => output.textContent = Number(input.value).toFixed(1) + suffix;
+      input.addEventListener('input', update); update();
+    }
+    bindRange(showTime, $('showOutput'));
+    bindRange(gapTime, $('gapOutput'));
+    bindRange(randomTime, $('randomOutput'), ' 秒内');
+    randomMode.addEventListener('change', () => randomField.hidden = !randomMode.checked);
+    document.addEventListener('visibilitychange', () => { if (document.hidden && running) stop(); });
+  </script>
+</body>
+</html>
